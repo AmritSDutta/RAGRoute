@@ -12,7 +12,8 @@ _llm_client: AsyncClient | None = None
 
 _GENAI_PROMPT = """
 You are an expert wine knowledge assistant equipped with a wine review Retrieval-Augmented Generation (RAG) engine.
-Your goal is to answer user questions accurately by retrieving data using the available search tools.
+Your goal is to answer user questions accurately by retrieving data using the available tools
+and synthesizing the tools response.
 
 ### Instructions
 1. **Analyze the Query:** Determine if the user is asking for specific facts (Lexical), 

@@ -1,9 +1,7 @@
+import json
 import logging
 
-from google.genai import types
-
-from google import genai
-from google.genai import types
+from src.rag_agent.db.vector_db import get_vector_db
 
 # --- Function declarations ------------------------------------------
 
@@ -61,39 +59,47 @@ hybrid_search_function = {
     },
 }
 
-_TOOLS = [bm25_search_function, dense_search_function, hybrid_search_function]
 
-
-def get_tools():
-    logging.info(f'will return following tools: {_TOOLS}')
-    return _TOOLS.copy()
-
-
-async def bm25_search(query: str):
+async def bm25_search(query: str) -> str:
     """
     "Query the BM25 (lexical) index for exact/literal matches."
-    :param query:
+    :param query: str
     :return: str
     """
     logging.info(query)
-    return query
+    db = get_vector_db()
+    docs = await db.get_top3_docs(query)
+    ser_docs = [doc.model_dump() for doc in docs]
+    res = json.dumps(ser_docs, ensure_ascii=False, indent=2)
+    logging.info(f'db response jsons dumps: {res}')
+    return res
 
 
-async def dense_search(query: str):
+async def dense_search(query: str) -> str:
     """
     Query the dense (semantic) vector index.
-    :param query:
+    :param query: str
     :return: str
     """
     logging.info(query)
-    return query
+    db = get_vector_db()
+    docs = await db.get_top3_docs(query)
+    ser_docs = [doc.model_dump() for doc in docs]
+    res = json.dumps(ser_docs, ensure_ascii=False, indent=2)
+    logging.info(f'db response jsons dumps: {res}')
+    return res
 
 
-async def hybrid_search(query: str):
+async def hybrid_search(query: str) -> str:
     """
     Query the hybrid retriever combining lexical and semantic signals.
-    :param query:
-    :return:
+    :param query: str
+    :return:str
     """
     logging.info(query)
-    return query
+    db = get_vector_db()
+    docs = await db.get_top3_docs(query)
+    ser_docs = [doc.model_dump() for doc in docs]
+    res = json.dumps(ser_docs, ensure_ascii=False, indent=2)
+    logging.info(f'db response jsons dumps: {res}')
+    return res

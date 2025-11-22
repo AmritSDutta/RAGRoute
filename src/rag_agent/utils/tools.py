@@ -68,7 +68,7 @@ async def bm25_search(query: str) -> str:
     """
     logging.info(query)
     db = get_vector_db()
-    docs = await db.get_top3_docs(query)
+    docs = await db.get_bm25_docs(query)
     ser_docs = [doc.model_dump() for doc in docs]
     res = json.dumps(ser_docs, ensure_ascii=False, indent=2)
     logging.info(f'db response jsons dumps: {res}')
@@ -83,7 +83,7 @@ async def dense_search(query: str) -> str:
     """
     logging.info(query)
     db = get_vector_db()
-    docs = await db.get_top3_docs(query)
+    docs = await db.get_dense_docs(query)
     ser_docs = [doc.model_dump() for doc in docs]
     res = json.dumps(ser_docs, ensure_ascii=False, indent=2)
     logging.info(f'db response jsons dumps: {res}')
@@ -98,7 +98,7 @@ async def hybrid_search(query: str) -> str:
     """
     logging.info(query)
     db = get_vector_db()
-    docs = await db.get_top3_docs(query)
+    docs = await db.get_hybrid_docs(query)
     ser_docs = [doc.model_dump() for doc in docs]
     res = json.dumps(ser_docs, ensure_ascii=False, indent=2)
     logging.info(f'db response jsons dumps: {res}')

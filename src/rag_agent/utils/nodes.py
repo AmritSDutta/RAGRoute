@@ -9,7 +9,7 @@ from langgraph.runtime import Runtime
 from langgraph.types import Command
 from langgraph_api.schema import Context
 
-from src.rag_agent.llms.genai_agent import get_genai_agent, schema
+from src.rag_agent.llms.genai_agent import get_genai_agent
 from src.rag_agent.utils.state import State
 from src.rag_agent.utils.tools import bm25_search, dense_search, hybrid_search
 
@@ -44,8 +44,7 @@ async def call_model(state: State, runtime: Runtime[Context]) -> Command:
     )
 
     response: GenerateContentResponse = await agent.send_message(gbt, config=_retrieval_config)
-    logging.info(f'genai reply: {response.candidates[0].content.parts[0].function_call}')
-
+    # logging.info(f'raw response: {response}')
     if response and response.text:
         logging.info(f'genai reply: {response.text[:100]}')
         logging.info(f'genai total token used: {response.usage_metadata.total_token_count}')

@@ -23,6 +23,7 @@ def make_fake_tool(return_value: str, name: str):
     return fake
 
 
+# once in a while might fail
 @pytest.mark.asyncio
 async def test_graph_extraction_with_realistic_tools():
     mock_result = json.dumps(
@@ -38,7 +39,6 @@ async def test_graph_extraction_with_realistic_tools():
     with patch("src.rag_agent.utils.nodes.bm25_search", new=fake_bm25), \
             patch("src.rag_agent.utils.nodes.dense_search", new=fake_dense), \
             patch("src.rag_agent.utils.nodes.hybrid_search", new=fake_hybrid):
-
         test_graph = raw_graph.compile()
         result = await asyncio.wait_for(test_graph.ainvoke(
             {"retry_count": 0, "messages": [
@@ -63,4 +63,3 @@ async def test_graph_extraction_with_realistic_tools():
 
         # Require at least *x%* matches (80% recommended for LLM output)
         assert pct >= 0.60, f"Matched {hits}/{len(required)} tokens ({pct:.0%}). Content: {text}"
-

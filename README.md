@@ -54,9 +54,9 @@ This project implements a multi-agent Retrieval-Augmented Generation (RAG) pipel
 
 ```mermaid
 flowchart TD
-    START([Start]) --> CLASSIFIER[Classifier Node (call_classifier_model)]
-    CLASSIFIER --> SYNTH[Synthesiser Node (call_synthesiser_model)]
-    SYNTH --> END([End])
+  START([Start]) --> CLASSIFIER[Classifier Node<br/>call_classifier_model]
+  CLASSIFIER --> SYNTH[Synthesiser Node<br/>call_synthesiser_model]
+  SYNTH --> END([End])
 ```
 
 ## 🥂 Purpose

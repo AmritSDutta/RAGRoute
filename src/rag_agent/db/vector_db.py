@@ -1,4 +1,3 @@
-# vector_db.py (simple sync version)
 import logging
 
 import psycopg2
@@ -29,12 +28,9 @@ class VectorDb:
     def close(self):
         try:
             self.cur.close()
-        except:
-            pass
-        try:
             self.conn.close()
-        except:
-            pass
+        except Exception as e:
+            logging.error('error while closing DB cursor/ connections', e)
 
     async def _get_query_embedding(self, text: str) -> list[float]:
         """Sync wrapper around your embedding function."""
@@ -79,10 +75,7 @@ class VectorDb:
         Use PostgreSQL full-text search (tsvector + ts_rank) instead of pgvector.
         Returns top-3 DocumentRecord rows.
         """
-        try:
-            with self.conn.cursor() as cur:
-                cur.execute(
-                    f"""
+        sql = f"""
                     WITH q AS (
                         SELECT plainto_tsquery('english', %s) AS query
                     )
@@ -93,9 +86,15 @@ class VectorDb:
                     WHERE d.tsv @@ q.query
                     ORDER BY ts_rank(d.tsv, q.query) DESC
                     LIMIT 3;
-                    """,
+                    """
+        try:
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    sql,
                     (query_text,)
                 )
+                logging.info("SQL:\n%s", cur.mogrify(sql, (query_text,)).decode())
+
                 rows = cur.fetchall()
                 logging.info("BM25 rows: %s", len(rows))
 
@@ -171,4 +170,3 @@ def get_vector_db() -> VectorDb:
     if _vector_db is None:
         _vector_db = VectorDb(DB_DSN)
     return _vector_db
-

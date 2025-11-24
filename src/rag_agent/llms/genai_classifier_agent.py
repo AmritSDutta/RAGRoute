@@ -165,12 +165,8 @@ def _create_client():
 
 
 async def get_classifier_agent() -> AsyncChat:
-    global _genai_chat
     _create_client()
-    if _genai_chat is None:
-        with _lock:
-            if _genai_chat is None:
-                _genai_chat = _llm_client.chats.create(
+    return _llm_client.chats.create(
                     model=MODEL_DEFAULT,
                     config=types.GenerateContentConfig(
                         system_instruction=_GENAI_CLASSIFIER_PROMPT,
@@ -178,7 +174,6 @@ async def get_classifier_agent() -> AsyncChat:
                         safety_settings=_safety_settings
                     )
                 )
-    return _genai_chat
 
 
 schema = {

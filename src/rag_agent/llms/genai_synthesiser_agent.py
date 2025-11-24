@@ -7,7 +7,6 @@ from google.genai.client import AsyncClient
 
 MODEL_DEFAULT = "gemini-2.5-flash"
 _lock = Lock()
-_genai_chat: AsyncChat | None = None
 _llm_client: AsyncClient | None = None
 
 _GENAI_Synthesis_PROMPT = """
@@ -123,19 +122,14 @@ def _create_client():
 
 
 async def get_synthesiser_agent() -> AsyncChat:
-    global _genai_chat
     _create_client()
-    if _genai_chat is None:
-        with _lock:
-            if _genai_chat is None:
-                _genai_chat = _llm_client.chats.create(
+    return _llm_client.chats.create(
                     model=MODEL_DEFAULT,
                     config=types.GenerateContentConfig(
                         system_instruction=_GENAI_Synthesis_PROMPT,
                         safety_settings=_safety_settings
                     )
                 )
-    return _genai_chat
 
 
 schema = {

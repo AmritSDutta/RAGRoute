@@ -1,0 +1,26 @@
+{
+  "name": "RAGRoute",
+  "theme": "maple",
+  "colors": {
+    "primary": "#722F37",
+    "light": "#8B0000",
+    "dark": "#4A0E17"
+  },
+  "filterSidebar": true,
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["index", "installation"]
+      },
+      {
+        "group": "Architecture & Core",
+        "pages": ["architecture", "agents", "retrieval"]
+      },
+      {
+        "group": "Development",
+        "pages": ["development"]
+      }
+    ]
+  }
+}

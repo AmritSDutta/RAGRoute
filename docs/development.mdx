@@ -1,0 +1,79 @@
+---
+title: Development & Testing
+description: Project layout, testing strategies, mock fixtures, and contribution guidelines for RAGRoute.
+---
+
+# Development & Testing
+
+This document covers repository organization, automated test execution, and guidelines for testing LLM agent interactions.
+
+## Project Directory Layout
+
+<Tree>
+  <Tree.Folder name="src" defaultOpen>
+    <Tree.Folder name="rag_agent" defaultOpen>
+      <Tree.File name="graph.py" highlight />
+      <Tree.File name="logging_config.py" />
+      <Tree.Folder name="db">
+        <Tree.File name="batch_insert.py" />
+        <Tree.File name="custom_embedding.py" />
+        <Tree.File name="vector_db.py" highlight />
+      </Tree.Folder>
+      <Tree.Folder name="llms">
+        <Tree.File name="genai_classifier_agent.py" highlight />
+        <Tree.File name="genai_synthesiser_agent.py" highlight />
+      </Tree.Folder>
+      <Tree.Folder name="utils">
+        <Tree.File name="nodes.py" highlight />
+        <Tree.File name="state.py" />
+        <Tree.File name="tools.py" />
+      </Tree.Folder>
+    </Tree.Folder>
+  </Tree.Folder>
+  <Tree.Folder name="tests" defaultOpen>
+    <Tree.File name="conftest.py" />
+    <Tree.Folder name="unit_tests">
+      <Tree.File name="test_classifier_unit.py" />
+    </Tree.Folder>
+    <Tree.Folder name="integration_tests">
+      <Tree.File name="test_graph_integration.py" />
+    </Tree.Folder>
+    <Tree.Folder name="e2e">
+      <Tree.File name="test_graph_e2e.py" />
+    </Tree.Folder>
+  </Tree.Folder>
+  <Tree.Folder name="docs" defaultOpen>
+    <Tree.File name="docs.json" highlight />
+    <Tree.File name="custom.css" />
+    <Tree.File name="index.mdx" />
+  </Tree.Folder>
+  <Tree.File name="AGENTS.md" highlight />
+  <Tree.File name="README.md" />
+  <Tree.File name="pyproject.toml" />
+  <Tree.File name="langgraph.json" />
+</Tree>
+
+## Testing Strategy
+
+RAGRoute utilizes pytest with asynchronous test runners and fixture mocks to test agents deterministically without incurring API billing or network dependencies during CI.
+
+### Running Test Suites
+
+```bash
+# Run unit tests
+uv run pytest tests/unit_tests
+
+# Run integration tests
+uv run pytest tests/integration_tests
+
+# Run all test suites
+uv run pytest tests/
+```
+
+### Mocking GenAI Responses
+
+Fixtures in `tests/conftest.py` provide recorded responses from Gemini:
+- `fake_classifier_response`: Parses mock classification payloads (`tests/data/classifier.raw.txt`).
+- `fake_synth_response`: Mocks function calling responses (`tests/data/synthesiser.raw.txt`).
+
+These fixtures allow testing node transitions, State updates, and function calling configurations independently from live model endpoints.

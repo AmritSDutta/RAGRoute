@@ -1,0 +1,82 @@
+---
+title: Retrieval & Vector Search
+description: Mechanics of BM25 full-text search, dense embeddings with pgvector, and hybrid retrieval.
+---
+
+# Retrieval & Vector Search
+
+RAGRoute implements a hybrid retrieval engine backed by PostgreSQL and the `pgvector` extension. Search tools are defined in `src/rag_agent/utils/tools.py` and implemented in `src/rag_agent/db/vector_db.py`.
+
+## Embeddings Pipeline
+
+- **Embedding Model**: `models/text-embedding-004` via the Google GenAI SDK.
+- **Dimensionality**: 256 dimensions (`output_dimensionality=256`).
+- **Task Types**:
+  - `retrieval_document`: Applied during offline database ingestion.
+  - `retrieval_query`: Applied during online query vector generation.
+
+## 1. Lexical Retrieval (BM25 FTS)
+
+Exact matches on wine names, vintages, and producer labels utilize PostgreSQL Full-Text Search:
+
+```sql
+WITH q AS (
+    SELECT plainto_tsquery('english', %s) AS query
+)
+SELECT d.title, d.description
+FROM wines_3 AS d, q
+WHERE d.tsv @@ q.query
+ORDER BY ts_rank(d.tsv, q.query) DESC
+LIMIT 3;
+```
+
+The `tsv` column is generated automatically from both title (weight A) and description (weight B).
+
+## 2. Dense Semantic Retrieval
+
+Descriptive questions, flavor profiles, and pairing recommendations use vector cosine distance:
+
+```sql
+SELECT title, description
+FROM wines_3
+ORDER BY embedding <=> %s::vector
+LIMIT 3;
+```
+
+An HNSW index (`USING hnsw (embedding vector_cosine_ops)`) enables low-latency approximate nearest neighbor search across large corpora.
+
+## 3. Hybrid Retrieval
+
+When a user query contains both specific brand constraints and abstract flavor descriptors, RAGRoute fuses lexical and semantic scores:
+
+```sql
+WITH q AS (
+    SELECT plainto_tsquery('english', %s) AS query
+)
+SELECT t.title, t.description
+FROM (
+    SELECT d.title, d.description, ts_rank(d.tsv, q.query) AS score
+    FROM wines_3 AS d, q
+    WHERE d.tsv @@ q.query
+
+    UNION ALL
+
+    SELECT d2.title, d2.description, 1 - (d2.embedding <=> %s::vector) AS score
+    FROM wines_3 AS d2
+) AS t
+ORDER BY t.score DESC
+LIMIT 3;
+```
+
+## Tool Interface
+
+All tools return JSON strings containing serialized `DocumentRecord` lists:
+
+```json
+[
+  {
+    "name": "Rainstorm 2013 Pinot Gris (Willamette Valley)",
+    "description": "Honey-drizzled guava and mango giving way to a slightly astringent, semidry finish."
+  }
+]
+```

@@ -1,0 +1,41 @@
+---
+title: RAGRoute Documentation
+description: Dual-agent Retrieval-Augmented Generation pipeline for high-precision wine review retrieval.
+---
+
+# RAGRoute Documentation
+
+**RAGRoute** is an intelligent, domain-specific Retrieval-Augmented Generation (RAG) system built on LangGraph and Google Gemini. It coordinates specialized autonomous LLM agents to deliver high-precision answers over wine tasting notes and wine metadata.
+
+## Core Highlights
+
+- **Dual-LLM Coordination**: Decouples classification and query normalization from retrieval execution and synthesis.
+- **Multi-Modal Retrieval**: Seamlessly selects between lexical (BM25 full-text search), semantic (pgvector cosine similarity), and hybrid search.
+- **Strict Domain Guardrails**: Enforces wine-specific knowledge boundaries, rejecting off-topic queries with standardized responses.
+- **Deterministic Query Extraction**: Cleans noise and extracts canonical labels for exact matching while preserving context for descriptive inquiries.
+
+## System Workflow
+
+```mermaid
+flowchart TD
+  User(["User Query"]) --> Classifier["Classifier Agent - Gemini 2.5 Flash-Lite"]
+  Classifier --> PolicyDecision{"Routing Decision"}
+  PolicyDecision -->|"lexical / semantic / hybrid"| Synthesizer["Synthesizer Agent - Gemini 2.5 Flash"]
+  PolicyDecision -->|"off_topic"| Rejection["Standard Refusal"]
+  Synthesizer --> Tools{"Function Calling"}
+  Tools -->|"bm25_search"| BM25["PostgreSQL Full-Text Search"]
+  Tools -->|"dense_search"| Dense["pgvector Cosine Search"]
+  Tools -->|"hybrid_search"| Hybrid["Combined Lexical and Semantic"]
+  BM25 --> Answer["Grounded Natural Language Answer"]
+  Dense --> Answer
+  Hybrid --> Answer
+```
+
+## Quick Start
+
+Get RAGRoute running locally in a few steps:
+
+1. Follow the [Installation Guide](/installation) to set up your environment and database.
+2. Explore the [Architecture Overview](/architecture) to understand StateGraph lifecycle and node transitions.
+3. Review [Agents & Policy Engine](/agents) to see the prompt policies and structured JSON schemas.
+4. Dive into [Retrieval & Vector Search](/retrieval) to learn about the PostgreSQL and pgvector indices.

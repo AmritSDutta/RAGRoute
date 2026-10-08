@@ -1,0 +1,89 @@
+---
+title: Agents & Policy Engine
+description: Specifications, prompts, schemas, and routing policies for Classifier and Synthesizer agents.
+---
+
+# Agents & Policy Engine
+
+RAGRoute separates query understanding from retrieval synthesis by delegating tasks to two specialized LLMs with distinct system prompts and capabilities.
+
+## 1. Classifier Agent
+
+The Classifier Agent acts as a classification-only policy engine. It never interacts with tools or executes searches directly.
+
+- **Model**: `gemini-2.5-flash-lite`
+- **Output Mode**: Strict JSON Schema enforcement
+- **Implementation**: `src/rag_agent/llms/genai_classifier_agent.py`
+
+### Structured Output Schema
+
+The model is constrained to return structured JSON adhering to:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "label": {
+      "type": "string",
+      "description": "Primary routing decision: lexical, semantic, hybrid, or off_topic"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Confidence score between 0.0 and 1.0"
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": { "type": "string" },
+          "confidence": { "type": "number" }
+        },
+        "required": ["label", "confidence"]
+      }
+    },
+    "query": {
+      "type": "string",
+      "description": "Cleaned search query string"
+    }
+  },
+  "required": ["label", "confidence", "alternatives"]
+}
+```
+
+### Deterministic Query Extraction Rules
+
+| Retrieval Mode | Query Construction Strategy |
+| :--- | :--- |
+| **Lexical** (`bm25_search`) | Extract canonical wine label. Use quoted phrase verbatim if present; otherwise strip question scaffolding while preserving vintages and casing. |
+| **Semantic** (`dense_search`) | Retain the entire original user query verbatim to preserve stylistic nuance and descriptors. |
+| **Hybrid** (`hybrid_search`) | Create a compact merged query starting with the canonical wine name and appending high-value semantic keywords (e.g. "fruity", "oak notes"). |
+| **Off-Topic** | Flag non-wine queries (weather, history, math, etc.) for rejection. |
+
+> [!IMPORTANT]
+> **Confidence Fallback**: If the classifier's confidence score for either lexical or semantic is below `0.7`, the policy automatically falls back to `hybrid`.
+
+---
+
+## 2. Synthesizer Agent
+
+The Synthesizer Agent receives the conversation state, reads the routing directive, triggers the appropriate search tool, and drafts the final answer.
+
+- **Model**: `gemini-2.5-flash`
+- **Tool Calling**: Native Google GenAI Function Calling (`automatic_function_calling=True`, `maximum_remote_calls=3`)
+- **Implementation**: `src/rag_agent/llms/genai_synthesiser_agent.py`
+
+### Tool Routing Table
+
+| Classifier Label | Bound Tool | Retrieval Target |
+| :--- | :--- | :--- |
+| `lexical` | `bm25_search` | PostgreSQL Full-Text Search on `tsvector` |
+| `semantic` | `dense_search` | pgvector cosine distance on `embedding` |
+| `hybrid` | `hybrid_search` | Combined score ranking lexical + semantic hits |
+| `off_topic` | *None* | Standardized domain refusal |
+
+### Refusal Policy
+
+When receiving an off-topic classification or out-of-domain prompt, the Synthesizer triggers a standardized refusal:
+
+> *"I am a specialized assistant for wine-review retrieval. I cannot answer questions about other topics."*
